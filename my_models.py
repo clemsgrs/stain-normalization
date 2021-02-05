@@ -118,16 +118,16 @@ class CycleGAN(ModelBackbone):
     def name(self):
         return 'CycleGAN'
 
-    def set_input(self, input):
+    def set_input(self, inp):
         AtoB = self.p.which_direction == 'AtoB'
-        input_A = input['A' if AtoB else 'B']
-        input_B = input['B' if AtoB else 'A']
+        input_A = inp['A' if AtoB else 'B']
+        input_B = inp['B' if AtoB else 'A']
         if len(self.gpu_ids) > 0:
             input_A = input_A.cuda(self.gpu_ids[0], async=True)
             input_B = input_B.cuda(self.gpu_ids[0], async=True)
         self.input_A = input_A
         self.input_B = input_B
-        self.image_paths = input['A_paths' if AtoB else 'B_paths']
+        self.image_paths = inp['A_path' if AtoB else 'B_path']
 
     def forward(self):
         self.real_A = Variable(self.input_A)
@@ -314,6 +314,7 @@ class CycleGAN(ModelBackbone):
         if self.p.identity > 0.0:
             ret_errors['idt_A'] = self.loss_idt_A
             ret_errors['idt_B'] = self.loss_idt_B
+        
         return ret_errors
 
     def get_current_visuals(self):
@@ -328,6 +329,7 @@ class CycleGAN(ModelBackbone):
         if self.isTrain and self.p.identity > 0.0:
             ret_visuals['idt_A'] = tensor2im(self.idt_A)
             ret_visuals['idt_B'] = tensor2im(self.idt_B)
+        
         return ret_visuals
 
     def save(self, label):
@@ -353,13 +355,13 @@ class TestModel(ModelBackbone):
     def name(self):
         return 'TestModel'
 
-    def set_input(self, input):
+    def set_input(self, inp):
         # we need to use single_dataset mode
-        input_A = input['A']
+        input_A = inp['A']
         if len(self.gpu_ids) > 0:
             input_A = input_A.cuda(self.gpu_ids[0], async=True)
         self.input_A = input_A
-        self.image_paths = input['A_paths']
+        self.image_paths = inp['A_path']
 
     def test(self):
         self.real_A = Variable(self.input_A)

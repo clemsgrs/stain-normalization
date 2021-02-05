@@ -20,6 +20,14 @@ def tensor2im(image_tensor, imtype=np.uint8):
     image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0 * 255.0
     return image_numpy.astype(imtype)
 
+def print_current_errors(self, epoch, it, errors, t, save_log=False, log_path=''):
+    message = f'(epoch: {epoch}, iters: {it}, time: {t:.3f})'
+    for k, v in errors.items():
+        message = f'{message} {k}: {v:.3f}'
+    print(message)
+    if save_log:
+        with open(log_path, 'a') as log_file:
+            log_file.write(f'{message}\n')
 
 class ImagePool():
     

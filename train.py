@@ -1,10 +1,11 @@
 import torch
 import argparse
 import time
+from tqdm import tqdm
 
 from my_dataset import CreateDataLoader
 from my_models import create_model
-from my_utils import open_config_file
+from my_utils import open_config_file, print_current_errors
 
 parser = argparse.ArgumentParser()
 parseradd_argument('--config', type=str, default="default.json", metavar='N', help='config file')
@@ -49,32 +50,31 @@ for epoch in range(params.epoch_count, params.niter + params.niter_decay + 1):
     
     epoch_start_time = time.time()
     epoch_iter = 0
+    
+    with tqdm(dataset,
+              desc=(f'Train - Epoch: {epoch}'),
+              unit=' imgs',
+              ncols=80,
+              unit_scale=p.batchSize) as t:
 
-    for i, data in enumerate(dataset):
-        
-        iter_start_time = time.time()
-        total_steps += params.batchSize
-        epoch_iter += params.batchSize
-        model.set_input(data)
+        for i, data in enumerate(t):
+            
+            iter_start_time = time.time()
+            total_steps += params.batchSize
+            epoch_iter += params.batchSize
+            model.set_input(data)
 
-        # combined forward + backward pass
-        model.optimize_parameters()
+            # combined forward + backward pass
+            model.optimize_parameters()
 
-        if total_steps % params.display_freq == 0:
-            save_result = total_steps % params.update_html_freq == 0
-
-        if total_steps % params.print_freq == 0:
+        if epoch % params.save_epoch_freq == 0:
             errors = model.get_current_errors()
-            t = (time.time() - iter_start_time) / params.batchSize
-
-        if total_steps % params.save_latest_freq == 0:
-            print(f'saving the latest model (epoch:{epoch}, total_steps:{total_steps})')
+            t = (time.time() - epoch_start_time)
+            log_filepath = os.path.join(p.log_path, 'loss_log.txt')
+            print_current_errors(epoch, epoch_iter, errors, t, p.save_log, log_filepath)
+            print('\nsaving the model at the end of epoch {epoch}, iters {total_steps}')
             model.save('latest')
+            # model.save(epoch)
 
-    if epoch % params.save_epoch_freq == 0:
-        print('saving the model at the end of epoch {epoch}, iters {total_steps}')
-        model.save('latest')
-        model.save(epoch)
-
-    print(f'End of epoch {epoch} / {params.niter + params.niter_decay} \t Time Taken: {time.time() - epoch_start_time} sec')
-    model.update_learning_rate()
+        print(f'End of epoch {epoch} / {params.niter + params.niter_decay} \t Time Taken: {time.time() - epoch_start_time} sec')
+        model.update_learning_rate()

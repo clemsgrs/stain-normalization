@@ -1,5 +1,4 @@
 {
-    "display_freq": 100,
     "display_single_pane_ncols": 0,
     "update_html_freq": 1000,
     "print_freq": 100,
@@ -52,6 +51,8 @@
     "no_flip": false,
     "init_type": "normal",
     "isTrain": true,
-    "initialized": true
+    "initialized": true,
+    "save_log": true,
+    "log_path": "log/"
 }
 
