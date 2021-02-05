@@ -7,59 +7,97 @@ from collections import OrderedDict
 from torch.autograd import Variable
 import itertools
 
+from my_utils import ImagePool, tensor2im
+from .base_model import BaseModel
+from . import my_networks
 
-class StainGAN(nn.Module):
 
-    def __init__(self, opt):
-        super(StainGAN, self).__init__(opt)
+class ModelBackbone():
+    
+    def __init__(self, p)
 
-        nb = opt.batchSize
-        size = opt.fineSize
+        self.p = plt
+        self.gpu_ids = plt.gpu_ids
+        self.isTrain = p.isTrain
+        self.Tensor = torch.cuda.FloatTensor if self.gpu_ids else torch.Tensor
+        self.save_dir = os.path.join(p.checkpoints_dir, p.name)
 
-        # load/define networks
+    def name(self):
+        return 'BaseModel'
+
+    def set_input(self, input):
+        self.input = input
+
+    # helper saving function that can be used by subclasses
+    def save_model(self, model, model_label, epoch_label, gpu_ids):
+        save_filename = f'{epoch_label}_net_{model_label}.pth'
+        save_path = os.path.join(self.save_dir, save_filename)
+        torch.save(model.cpu().state_dict(), save_path)
+        if len(gpu_ids) and torch.cuda.is_available():
+            model.cuda(gpu_ids[0])
+
+    # helper loading function that can be used by subclasses
+    def load_model(self, model, model_label, epoch_label):
+        save_filename = f'{epoch_label}_net_{model_label}.pth'
+        save_path = os.path.join(self.save_dir, save_filename)
+        model.load_state_dict(torch.load(save_path))
+
+    # update learning rate (called once every epoch)
+    def update_learning_rate(self):
+        for scheduler in self.schedulers:
+            scheduler.step()
+        lr = self.optimizers[0].param_groups[0]['lr']
+        if (lr <= 0):
+            print(f'Learning rate = {lr:.7f}')
+            print('EXITING TRAINING BECAUSE LR IS <0')
+            sys.exit()
+        print(f'Learning rate = {lr:.7f}')
+
+
+class CycleGAN(ModelBackbone):
+    
+    def __init__(self, p)
+
+        super(CycleGAN, self).__init__(p)
+        nb = p.batchSize
+        size = p.fineSize
+        
+        # load/define models
         # The naming conversion is different from those used in the paper
         # Code (paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
 
-        self.netG_A = networks.define_G(opt.input_nc, opt.output_nc,
-                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, opt.init_type,
-                                        self.gpu_ids)
-        self.netG_B = networks.define_G(opt.output_nc, opt.input_nc,
-                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, opt.init_type,
-                                        self.gpu_ids)
+        self.netG_A = my_networks.define_G(p.input_nc, p.output_nc, p.ngf, p.which_model_netG, p.norm, not p.no_dropout, p.init_type, self.gpu_ids)
+        self.netG_B = my_networks.define_G(p.output_nc, p.input_nc, p.ngf, p.which_model_netG, p.norm, not p.no_dropout, p.init_type, self.gpu_ids)
 
         if self.isTrain:
-            use_sigmoid = opt.no_lsgan
-            self.netD_A = networks.define_D(opt.output_nc, opt.ndf,
-                                            opt.which_model_netD,
-                                            opt.n_layers_D, opt.norm, use_sigmoid, opt.init_type, self.gpu_ids)
-            self.netD_B = networks.define_D(opt.input_nc, opt.ndf,
-                                            opt.which_model_netD,
-                                            opt.n_layers_D, opt.norm, use_sigmoid, opt.init_type, self.gpu_ids)
-        if not self.isTrain or opt.continue_train:
-            which_epoch = opt.which_epoch
-            self.load_network(self.netG_A, 'G_A', which_epoch)
-            self.load_network(self.netG_B, 'G_B', which_epoch)
+            use_sigmoid = p.no_lsgan
+            self.netD_A = my_networks.define_D(p.output_nc, p.ndf, p.which_model_netD, p.n_layers_D, p.norm, use_sigmoid, p.init_type, self.gpu_ids)
+            self.netD_B = my_networks.define_D(p.input_nc, p.ndf, p.which_model_netD, p.n_layers_D, p.norm, use_sigmoid, p.init_type, self.gpu_ids)
+        
+        if not self.isTrain or p.continue_train:
+            which_epoch = p.which_epoch
+            self.load_model(self.netG_A, 'G_A', which_epoch)
+            self.load_model(self.netG_B, 'G_B', which_epoch)
             if self.isTrain:
-                self.load_network(self.netD_A, 'D_A', which_epoch)
-                self.load_network(self.netD_B, 'D_B', which_epoch)
+                self.load_model(self.netD_A, 'D_A', which_epoch)
+                self.load_model(self.netD_B, 'D_B', which_epoch)
 
         if self.isTrain:
-            self.old_lr = opt.lr
-            self.fake_A_pool = ImagePool(opt.pool_size)
-            self.fake_B_pool = ImagePool(opt.pool_size)
+            self.old_lr = p.lr
+            self.fake_A_pool = ImagePool(p.pool_size)
+            self.fake_B_pool = ImagePool(p.pool_size)
             # define loss functions
-            self.criterionGAN = networks.GANLoss(use_lsgan=not opt.no_lsgan, tensor=self.Tensor)
+            self.criterionGAN = my_networks.GANLoss(use_lsgan=not p.no_lsgan, tensor=self.Tensor)
             self.criterionCycle = torch.nn.L1Loss()
             self.criterionIdt = torch.nn.L1Loss()
             # gradient loss as per aicha
-            if opt.aicha_loss:
+            if p.aicha_loss:
                 self.criterionAicha = torch.nn.L1Loss()
 
             # initialize optimizers
-            self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
-                                                lr=opt.lr, betas=(opt.beta1, 0.999))
-            self.optimizer_D_A = torch.optim.Adam(self.netD_A.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
-            self.optimizer_D_B = torch.optim.Adam(self.netD_B.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+            self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()), lr=p.lr, betas=(p.beta1, 0.999))
+            self.optimizer_D_A = torch.optim.Adam(self.netD_A.parameters(), lr=p.lr, betas=(p.beta1, 0.999))
+            self.optimizer_D_B = torch.optim.Adam(self.netD_B.parameters(), lr=p.lr, betas=(p.beta1, 0.999))
 
             self.optimizers = []
             self.schedulers = []
@@ -67,18 +105,21 @@ class StainGAN(nn.Module):
             self.optimizers.append(self.optimizer_D_A)
             self.optimizers.append(self.optimizer_D_B)
             for optimizer in self.optimizers:
-                self.schedulers.append(networks.get_scheduler(optimizer, opt))
+                self.schedulers.append(my_networks.get_scheduler(optimizer, p))
 
         # print('---------- Networks initialized -------------')
-        # networks.print_network(self.netG_A)
-        # networks.print_network(self.netG_B)
+        # my_networks.print_network(self.netG_A)
+        # my_networks.print_network(self.netG_B)
         # if self.isTrain:
-        #     networks.print_network(self.netD_A)
-        #     networks.print_network(self.netD_B)
+        #     my_networks.print_network(self.netD_A)
+        #     my_networks.print_network(self.netD_B)
         # print('-----------------------------------------------')
 
+    def name(self):
+        return 'CycleGAN'
+
     def set_input(self, input):
-        AtoB = self.opt.which_direction == 'AtoB'
+        AtoB = self.p.which_direction == 'AtoB'
         input_A = input['A' if AtoB else 'B']
         input_B = input['B' if AtoB else 'A']
         if len(self.gpu_ids) > 0:
@@ -123,17 +164,17 @@ class StainGAN(nn.Module):
     def backward_D_A(self):
         fake_B = self.fake_B_pool.query(self.fake_B)
         loss_D_A = self.backward_D_basic(self.netD_A, self.real_B, fake_B)
-        self.loss_D_A = loss_D_A.data[0]
+        self.loss_D_A = loss_D_A.item()
 
     def backward_D_B(self):
         fake_A = self.fake_A_pool.query(self.fake_A)
         loss_D_B = self.backward_D_basic(self.netD_B, self.real_A, fake_A)
-        self.loss_D_B = loss_D_B.data[0]
+        self.loss_D_B = loss_D_B.item()
 
     def backward_G(self):
-        lambda_idt = self.opt.identity
-        lambda_A = self.opt.lambda_A
-        lambda_B = self.opt.lambda_B
+        lambda_idt = self.p.identity
+        lambda_A = self.p.lambda_A
+        lambda_B = self.p.lambda_B
         # Identity loss
         if lambda_idt > 0:
             # G_A should be identity if real_B is fed.
@@ -142,11 +183,11 @@ class StainGAN(nn.Module):
             # G_B should be identity if real_A is fed.
             idt_B = self.netG_B(self.real_A)
             loss_idt_B = self.criterionIdt(idt_B, self.real_A) * lambda_A * lambda_idt
-
             self.idt_A = idt_A.data
             self.idt_B = idt_B.data
-            self.loss_idt_A = loss_idt_A.data[0]
-            self.loss_idt_B = loss_idt_B.data[0]
+            self.loss_idt_A = loss_idt_A.item()
+            self.loss_idt_B = loss_idt_B.item()
+        
         else:
             loss_idt_A = 0
             loss_idt_B = 0
@@ -173,7 +214,7 @@ class StainGAN(nn.Module):
         loss_cycle_B = self.criterionCycle(rec_B, self.real_B) * lambda_B
 
         # aicha forward
-        if self.opt.aicha_loss:
+        if self.p.aicha_loss:
             print("I AM AICHCA LOSS")
             # w1 = Variable(torch.Tensor([1.0, 2.0, 3.0]), requires_grad=True)
             #
@@ -181,8 +222,8 @@ class StainGAN(nn.Module):
             #
             # sys.exit()
             #
-            # realA_img = util.tensor2im(self.real_A.data)
-            # recA_img = util.tensor2im(rec_A.data)
+            # realA_img = tensor2im(self.real_A.data)
+            # recA_img = tensor2im(rec_A.data)
             # print(realA_img.shape)
             # print("---------")
             # gradient_input = self.get_gradient(recA_img)
@@ -191,14 +232,14 @@ class StainGAN(nn.Module):
             #
             # wx = Variable(torch.from_numpy(np.multiply(gradient_input, realA_img)), requires_grad=True)
             # wg = Variable(torch.from_numpy(np.multiply(gradient_input, recA_img)), requires_grad=True)
-            # loss_Aicha_A = self.criterionAicha(wx, wg) * self.opt.lambda_Aicha
+            # loss_Aicha_A = self.criterionAicha(wx, wg) * self.p.lambda_Aicha
 
             # aicha backwards
 
-            realB_img = util.tensor2im(self.real_B.data)
-            recB_img = util.tensor2im(rec_B.data)
-            plt.imshow(realB_img);
-            plt.imshow(recB_img);
+            realB_img = tensor2im(self.real_B.data)
+            recB_img = tensor2im(rec_B.data)
+            plt.imshow(realB_img)
+            plt.imshow(recB_img)
             plt.show()
 
             sys.exit()
@@ -214,7 +255,7 @@ class StainGAN(nn.Module):
             print('grad_times_real', grad_times_real)
             sys.exit()
             wg = Variable(torch.from_numpy(np.multiply(gradient_input, recB_img)), requires_grad=True)
-            loss_Aicha_B = self.criterionAicha(wx, wg) * self.opt.lambda_Aicha
+            loss_Aicha_B = self.criterionAicha(wx, wg) * self.p.lambda_Aicha
 
             # aicha combined loss
 
@@ -230,19 +271,18 @@ class StainGAN(nn.Module):
         self.rec_A = rec_A.data
         self.rec_B = rec_B.data
 
-        self.loss_G_A = loss_G_A.data[0]
-        self.loss_G_B = loss_G_B.data[0]
+        self.loss_G_A = loss_G_A.item()
+        self.loss_G_B = loss_G_B.item()
 
-        if self.opt.aicha_loss:
+        if self.p.aicha_loss:
             # AichaLoss
-            self.loss_Aicha_A = loss_Aicha_A.data[0]
-            self.loss_Aicha_B = loss_Aicha_B.data[0]
+            self.loss_Aicha_A = loss_Aicha_A.item()
+            self.loss_Aicha_B = loss_Aicha_B.item()
         else:
             # cycleLoss
-            self.loss_cycle_A = loss_cycle_A.data[0]
-            self.loss_cycle_B = loss_cycle_B.data[0]
+            self.loss_cycle_A = loss_cycle_A.item()
+            self.loss_cycle_B = loss_cycle_B.item()
 
-    #
     # def get_gradient(self, img):
     #     # print("get_gradient ",img)
     #     # return np.gradient(np.array(img))
@@ -271,27 +311,84 @@ class StainGAN(nn.Module):
         # ret_errors = OrderedDict([('D_A', self.loss_D_A), ('G_A', self.loss_G_A), ('Aicha_A', self.loss_cycle_A),
         #                           ('D_B', self.loss_D_B), ('G_B', self.loss_G_B), ('Aicha_B', self.loss_cycle_B)])
 
-        if self.opt.identity > 0.0:
+        if self.p.identity > 0.0:
             ret_errors['idt_A'] = self.loss_idt_A
             ret_errors['idt_B'] = self.loss_idt_B
         return ret_errors
 
     def get_current_visuals(self):
-        real_A = util.tensor2im(self.input_A)
-        fake_B = util.tensor2im(self.fake_B)
-        rec_A = util.tensor2im(self.rec_A)
-        real_B = util.tensor2im(self.input_B)
-        fake_A = util.tensor2im(self.fake_A)
-        rec_B = util.tensor2im(self.rec_B)
+        real_A = tensor2im(self.input_A)
+        fake_B = tensor2im(self.fake_B)
+        rec_A = tensor2im(self.rec_A)
+        real_B = tensor2im(self.input_B)
+        fake_A = tensor2im(self.fake_A)
+        rec_B = tensor2im(self.rec_B)
         ret_visuals = OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
                                    ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)])
-        if self.opt.isTrain and self.opt.identity > 0.0:
-            ret_visuals['idt_A'] = util.tensor2im(self.idt_A)
-            ret_visuals['idt_B'] = util.tensor2im(self.idt_B)
+        if self.isTrain and self.p.identity > 0.0:
+            ret_visuals['idt_A'] = tensor2im(self.idt_A)
+            ret_visuals['idt_B'] = tensor2im(self.idt_B)
         return ret_visuals
 
     def save(self, label):
-        self.save_network(self.netG_A, 'G_A', label, self.gpu_ids)
-        self.save_network(self.netD_A, 'D_A', label, self.gpu_ids)
-        self.save_network(self.netG_B, 'G_B', label, self.gpu_ids)
-        self.save_network(self.netD_B, 'D_B', label, self.gpu_ids)
+        self.save_model(self.netG_A, 'G_A', label, self.gpu_ids)
+        self.save_model(self.netD_A, 'D_A', label, self.gpu_ids)
+        self.save_model(self.netG_B, 'G_B', label, self.gpu_ids)
+        self.save_model(self.netD_B, 'D_B', label, self.gpu_ids)
+
+
+class TestModel(ModelBackbone):
+
+    def __init__(self, p)
+
+        super(TestModel, self).__init__(p)
+        assert(not p.isTrain)
+        self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, opt.init_type, self.gpu_ids)
+        which_epoch = p.which_epoch
+        self.load_model(self.netG, 'G', which_epoch)
+        print('---------- Networks initialized -------------')
+        my_networks.print_network(self.netG)
+        print('-----------------------------------------------')
+    
+    def name(self):
+        return 'TestModel'
+
+    def set_input(self, input):
+        # we need to use single_dataset mode
+        input_A = input['A']
+        if len(self.gpu_ids) > 0:
+            input_A = input_A.cuda(self.gpu_ids[0], async=True)
+        self.input_A = input_A
+        self.image_paths = input['A_paths']
+
+    def test(self):
+        self.real_A = Variable(self.input_A)
+        self.fake_B = self.netG(self.real_A)
+
+    # get image paths
+    def get_image_paths(self):
+        return self.image_paths
+
+    def get_current_visuals(self):
+        real_A = tensor2im(self.real_A.data)
+        fake_B = tensor2im(self.fake_B.data)
+        return OrderedDict([('real_A', real_A), ('fake_B', fake_B)])
+
+
+def create_model(p):
+    
+    model = None
+    print(p.model)
+    
+    if p.model == 'cycle_gan':
+        assert(p.dataset_mode == 'unaligned')
+        model = CycleGANModel(p)
+    elif p.model == 'test':
+        assert(p.dataset_mode == 'single')
+        model = TestModel(p)
+    else:
+        raise ValueError(f'Model {p.model} not recognized')
+
+    print(f'model {model.name()} was created')
+    
+    return model
