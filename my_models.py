@@ -8,16 +8,15 @@ from torch.autograd import Variable
 import itertools
 
 from my_utils import ImagePool, tensor2im
-from .base_model import BaseModel
-from . import my_networks
+import my_networks as my_networks
 
 
 class ModelBackbone():
     
-    def __init__(self, p)
+    def __init__(self, p):
 
-        self.p = plt
-        self.gpu_ids = plt.gpu_ids
+        self.p = p
+        self.gpu_ids = p.gpu_ids
         self.isTrain = p.isTrain
         self.Tensor = torch.cuda.FloatTensor if self.gpu_ids else torch.Tensor
         self.save_dir = os.path.join(p.checkpoints_dir, p.name)
@@ -56,11 +55,11 @@ class ModelBackbone():
 
 class CycleGAN(ModelBackbone):
     
-    def __init__(self, p)
+    def __init__(self, p):
 
         super(CycleGAN, self).__init__(p)
         nb = p.batchSize
-        size = p.fineSize
+        size = p.cropSize
         
         # load/define models
         # The naming conversion is different from those used in the paper
@@ -123,8 +122,8 @@ class CycleGAN(ModelBackbone):
         input_A = inp['A' if AtoB else 'B']
         input_B = inp['B' if AtoB else 'A']
         if len(self.gpu_ids) > 0:
-            input_A = input_A.cuda(self.gpu_ids[0], async=True)
-            input_B = input_B.cuda(self.gpu_ids[0], async=True)
+            input_A = input_A.cuda(self.gpu_ids[0])
+            input_B = input_B.cuda(self.gpu_ids[0])
         self.input_A = input_A
         self.input_B = input_B
         self.image_paths = inp['A_path' if AtoB else 'B_path']
@@ -341,7 +340,7 @@ class CycleGAN(ModelBackbone):
 
 class TestModel(ModelBackbone):
 
-    def __init__(self, p)
+    def __init__(self, p):
 
         super(TestModel, self).__init__(p)
         assert(not p.isTrain)
@@ -359,7 +358,7 @@ class TestModel(ModelBackbone):
         # we need to use single_dataset mode
         input_A = inp['A']
         if len(self.gpu_ids) > 0:
-            input_A = input_A.cuda(self.gpu_ids[0], async=True)
+            input_A = input_A.cuda(self.gpu_ids[0])
         self.input_A = input_A
         self.image_paths = inp['A_path']
 
@@ -384,7 +383,7 @@ def create_model(p):
     
     if p.model == 'cycle_gan':
         assert(p.dataset_mode == 'unaligned')
-        model = CycleGANModel(p)
+        model = CycleGAN(p)
     elif p.model == 'test':
         assert(p.dataset_mode == 'single')
         model = TestModel(p)

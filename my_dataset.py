@@ -282,11 +282,14 @@ class CustomDatasetDataLoader():
     def name(self):
         return 'CustomDatasetDataLoader'
 
+    def load_data(self):
+        return self
+
     def __len__(self):
-        return min(len(self.dataset), self.self.p.max_dataset_size)
+        return min(len(self.dataset), self.p.max_dataset_size)
 
     def __iter__(self):
         for i, data in enumerate(self.dataloader):
-            if i >= self.self.p.max_dataset_size:
+            if i >= self.p.max_dataset_size:
                 break
             yield data

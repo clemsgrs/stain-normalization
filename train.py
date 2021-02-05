@@ -1,3 +1,4 @@
+import os
 import torch
 import argparse
 import time
@@ -5,10 +6,10 @@ from tqdm import tqdm
 
 from my_dataset import CreateDataLoader
 from my_models import create_model
-from my_utils import open_config_file, print_current_errors
+from my_utils import open_config_file, print_current_errors, mkdirs, mkdir
 
 parser = argparse.ArgumentParser()
-parseradd_argument('--config', type=str, default="default.json", metavar='N', help='config file')
+parser.add_argument('--config', type=str, default="default.json", metavar='N', help='config file')
 args = parser.parse_args()
 params = open_config_file(args.config)
 

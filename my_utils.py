@@ -1,4 +1,13 @@
+import os
+import re
 import json
+import random
+import numpy as np
+import torch
+from torch.autograd import Variable
+from PIL import Image
+import inspect
+import collections
 
 class AttrDict(dict):
     def __init__(self, *args, **kwargs):
@@ -10,6 +19,17 @@ def open_config_file(filepath):
         pdict = json.load(jsonfile)
         params = AttrDict(pdict)
     return params
+
+def mkdirs(paths):
+    if isinstance(paths, list) and not isinstance(paths, str):
+        for path in paths:
+            mkdir(path)
+    else:
+        mkdir(paths)
+
+def mkdir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 # Converts a Tensor into a Numpy array
 # |imtype|: the desired type of the converted numpy array
