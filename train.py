@@ -55,7 +55,7 @@ for epoch in range(params.epoch_count, params.niter + params.niter_decay + 1):
               desc=(f'Train - Epoch: {epoch}'),
               unit=' imgs',
               ncols=80,
-              unit_scale=p.batchSize) as t:
+              unit_scale=params.batchSize) as t:
 
         for i, data in enumerate(t):
             
