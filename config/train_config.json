@@ -52,6 +52,6 @@
     "init_type": "normal",
     "isTrain": true,
     "initialized": true,
-    "save_log": true,
+    "save_log": true
 }
 
