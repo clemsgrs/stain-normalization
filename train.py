@@ -28,12 +28,12 @@ print('-------------- End ----------------')
 # save to the disk
 expr_dir = os.path.join(params.checkpoints_dir, params.name)
 mkdir(expr_dir)
-file_name = os.path.join(expr_dir, 'opt.txt')
-with open(file_name, 'wt') as opt_file:
-    opt_file.write('------------ Options -------------\n')
+file_name = os.path.join(expr_dir, 'params.txt')
+with open(file_name, 'wt') as params_file:
+    params_file.write('------------ Options -------------\n')
     for k, v in sorted(args.items()):
-        opt_file.write('%s: %s\n' % (str(k), str(v)))
-    opt_file.write('-------------- End ----------------\n')
+        params_file.write('%s: %s\n' % (str(k), str(v)))
+    params_file.write('-------------- End ----------------\n')
 
 ###
 
@@ -70,7 +70,7 @@ for epoch in range(params.epoch_count, params.niter + params.niter_decay + 1):
         if epoch % params.save_epoch_freq == 0:
             errors = model.get_current_errors()
             t = (time.time() - epoch_start_time)
-            log_filepath = os.path.join(p.log_path, 'loss_log.txt')
+            log_filepath = os.path.join(expr_dir, 'log', 'loss_log.txt')
             print_current_errors(epoch, epoch_iter, errors, t, p.save_log, log_filepath)
             print('\nsaving the model at the end of epoch {epoch}, iters {total_steps}')
             model.save('latest')

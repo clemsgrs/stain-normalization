@@ -39,7 +39,7 @@
     "model": "cycle_gan",
     "which_direction": "AtoB",
     "nThreads": 1,
-    "checkpoints_dir": ".",
+    "checkpoints_dir": "checkpoints/",
     "norm": "instance",
     "serial_batches": false,
     "display_winsize": 256,
@@ -53,6 +53,5 @@
     "isTrain": true,
     "initialized": true,
     "save_log": true,
-    "log_path": "log/"
 }
 
