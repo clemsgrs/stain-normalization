@@ -4,9 +4,9 @@ import torch
 import argparse
 from tqdm import tqdm
 
-from my_dataset import CreateDataLoader
-from my_models import create_model
-from my_utils import open_config_file, print_current_errors, mkdirs, mkdir
+from dataset import CreateDataLoader
+from models import create_model
+from utils import open_config_file, print_current_errors, mkdirs, mkdir
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default="default.json", metavar='N', help='config file')

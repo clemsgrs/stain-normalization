@@ -6,9 +6,9 @@ import argparse
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-from my_dataset import CreateDataLoader
-from my_models import create_model
-from my_utils import open_config_file
+from dataset import CreateDataLoader
+from models import create_model
+from utils import open_config_file
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default="default.json", metavar='N', help='config file')

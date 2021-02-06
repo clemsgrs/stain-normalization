@@ -7,8 +7,8 @@ from collections import OrderedDict
 from torch.autograd import Variable
 import itertools
 
-from my_utils import ImagePool, tensor2im
-import my_networks as my_networks
+from utils import ImagePool, tensor2im
+import networks as networks
 
 
 class ModelBackbone():
@@ -65,13 +65,13 @@ class CycleGAN(ModelBackbone):
         # The naming conversion is different from those used in the paper
         # Code (paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
 
-        self.netG_A = my_networks.define_G(p.input_nc, p.output_nc, p.ngf, p.which_model_netG, p.norm, not p.no_dropout, p.init_type, self.gpu_ids)
-        self.netG_B = my_networks.define_G(p.output_nc, p.input_nc, p.ngf, p.which_model_netG, p.norm, not p.no_dropout, p.init_type, self.gpu_ids)
+        self.netG_A = networks.define_G(p.input_nc, p.output_nc, p.ngf, p.which_model_netG, p.norm, not p.no_dropout, p.init_type, self.gpu_ids)
+        self.netG_B = networks.define_G(p.output_nc, p.input_nc, p.ngf, p.which_model_netG, p.norm, not p.no_dropout, p.init_type, self.gpu_ids)
 
         if self.isTrain:
             use_sigmoid = p.no_lsgan
-            self.netD_A = my_networks.define_D(p.output_nc, p.ndf, p.which_model_netD, p.n_layers_D, p.norm, use_sigmoid, p.init_type, self.gpu_ids)
-            self.netD_B = my_networks.define_D(p.input_nc, p.ndf, p.which_model_netD, p.n_layers_D, p.norm, use_sigmoid, p.init_type, self.gpu_ids)
+            self.netD_A = networks.define_D(p.output_nc, p.ndf, p.which_model_netD, p.n_layers_D, p.norm, use_sigmoid, p.init_type, self.gpu_ids)
+            self.netD_B = networks.define_D(p.input_nc, p.ndf, p.which_model_netD, p.n_layers_D, p.norm, use_sigmoid, p.init_type, self.gpu_ids)
         
         if not self.isTrain or p.continue_train:
             which_epoch = p.which_epoch
@@ -86,7 +86,7 @@ class CycleGAN(ModelBackbone):
             self.fake_A_pool = ImagePool(p.pool_size)
             self.fake_B_pool = ImagePool(p.pool_size)
             # define loss functions
-            self.criterionGAN = my_networks.GANLoss(use_lsgan=not p.no_lsgan, tensor=self.Tensor)
+            self.criterionGAN = networks.GANLoss(use_lsgan=not p.no_lsgan, tensor=self.Tensor)
             self.criterionCycle = torch.nn.L1Loss()
             self.criterionIdt = torch.nn.L1Loss()
             # gradient loss as per aicha
@@ -104,14 +104,14 @@ class CycleGAN(ModelBackbone):
             self.optimizers.append(self.optimizer_D_A)
             self.optimizers.append(self.optimizer_D_B)
             for optimizer in self.optimizers:
-                self.schedulers.append(my_networks.get_scheduler(optimizer, p))
+                self.schedulers.append(networks.get_scheduler(optimizer, p))
 
         # print('---------- Networks initialized -------------')
-        # my_networks.print_network(self.netG_A)
-        # my_networks.print_network(self.netG_B)
+        # networks.print_network(self.netG_A)
+        # networks.print_network(self.netG_B)
         # if self.isTrain:
-        #     my_networks.print_network(self.netD_A)
-        #     my_networks.print_network(self.netD_B)
+        #     networks.print_network(self.netD_A)
+        #     networks.print_network(self.netD_B)
         # print('-----------------------------------------------')
 
     def name(self):
@@ -349,7 +349,7 @@ class TestModel(ModelBackbone):
         which_epoch = p.which_epoch
         self.load_model(self.netG, 'G', which_epoch)
         print('---------- Networks initialized -------------')
-        my_networks.print_network(self.netG)
+        networks.print_network(self.netG)
         print('-----------------------------------------------')
     
     def name(self):
