@@ -13,7 +13,6 @@ parser.add_argument('--config', type=str, default="default.json", metavar='N', h
 args = parser.parse_args()
 params = open_config_file(args.config)
 
-
 params.gpu_ids = [params.gpu_ids]
 # set gpu ids
 if len(params.gpu_ids) > 0:
@@ -40,6 +39,7 @@ with open(file_name, 'wt') as params_file:
 
 data_loader = CreateDataLoader(params)
 dataset = data_loader.dataset
+dataset_size = len(dataset)
 print(f'#training images = {dataset_size}')
 
 model = create_model(params)
