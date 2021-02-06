@@ -377,6 +377,71 @@ class TestModel(ModelBackbone):
         return OrderedDict([('real_A', real_A), ('fake_B', fake_B)])
 
 
+class CycleGAN_inference(ModelBackbone):
+    
+    def __init__(self, p, ):
+
+        super(CycleGAN_inference, self).__init__(p)
+        size = p.cropSize
+
+        self.netG_A = networks.define_G(p.input_nc, p.output_nc, p.ngf, p.which_model_netG, p.norm, not p.no_dropout, p.init_type, self.gpu_ids)
+        self.netG_B = networks.define_G(p.output_nc, p.input_nc, p.ngf, p.which_model_netG, p.norm, not p.no_dropout, p.init_type, self.gpu_ids)
+        
+        def load_model(model, checkpoint_path):
+            model.load_state_dict(torch.load(checkpoint_path))
+
+        which_epoch = p.which_epoch
+        G_A_checkpoint_path = os.path.join(p.checkpoints_dir, f'{which_epoch}_net_G_A.pth')
+        G_B_checkpoint_path = os.path.join(p.checkpoints_dir, f'{which_epoch}_net_G_B.pth')
+        load_model(self.netG_A, G_A_checkpoint_path)
+        load_model(self.netG_B, G_B_checkpoint_path)
+
+    def name(self):
+        return 'CycleGAN_inference'
+
+    def set_input(self, inp):
+        AtoB = self.p.which_direction == 'AtoB'
+        input_A = inp['A' if AtoB else 'B']
+        input_B = inp['B' if AtoB else 'A']
+        if len(self.gpu_ids) > 0:
+            input_A = input_A.cuda(self.gpu_ids[0])
+            input_B = input_B.cuda(self.gpu_ids[0])
+        self.input_A = input_A
+        self.input_B = input_B
+        self.image_paths = inp['A_path' if AtoB else 'B_path']
+
+    def test(self):
+        with torch.no_grad():
+            real_A = Variable(self.input_A)
+            fake_B = self.netG_A(real_A)
+            self.rec_A = self.netG_B(fake_B).data
+            self.fake_B = fake_B.data
+
+            real_B = Variable(self.input_B)
+            fake_A = self.netG_B(real_B)
+            self.rec_B = self.netG_A(fake_A).data
+            self.fake_A = fake_A.data
+
+    # get image paths
+    def get_image_paths(self):
+        return self.image_paths
+
+    def get_current_visuals(self):
+        real_A = tensor2im(self.input_A)
+        fake_B = tensor2im(self.fake_B)
+        rec_A = tensor2im(self.rec_A)
+        real_B = tensor2im(self.input_B)
+        fake_A = tensor2im(self.fake_A)
+        rec_B = tensor2im(self.rec_B)
+        ret_visuals = OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
+                                   ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)])
+        if self.isTrain and self.p.identity > 0.0:
+            ret_visuals['idt_A'] = tensor2im(self.idt_A)
+            ret_visuals['idt_B'] = tensor2im(self.idt_B)
+        
+        return ret_visuals
+
+
 def create_model(p):
     
     model = None
@@ -384,7 +449,10 @@ def create_model(p):
     
     if p.model == 'cycle_gan':
         assert(p.dataset_mode == 'unaligned')
-        model = CycleGAN(p)
+        if p.phase = 'inference':
+            model = CycleGAN_inference(p)
+        else:
+            model = CycleGAN(p)
     elif p.model == 'test':
         assert(p.dataset_mode == 'single')
         model = TestModel(p)
