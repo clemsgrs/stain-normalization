@@ -72,7 +72,7 @@ for epoch in range(params.epoch_count, params.niter + params.niter_decay + 1):
             errors = model.get_current_errors()
             t = (time.time() - epoch_start_time)
             log_filepath = os.path.join(expr_dir, 'log', 'loss_log.txt')
-            print_current_errors(epoch, epoch_iter, errors, t, p.save_log, log_filepath)
+            print_current_errors(epoch, epoch_iter, errors, t, paramsp.save_log, log_filepath)
             print('\nsaving the model at the end of epoch {epoch}, iters {total_steps}')
             model.save('latest')
             # model.save(epoch)
