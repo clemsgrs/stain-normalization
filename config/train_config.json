@@ -1,4 +1,5 @@
 {
+    "dataroot": "data",
     "display_single_pane_ncols": 0,
     "update_html_freq": 1000,
     "print_freq": 100,
@@ -22,7 +23,6 @@
     "lr_policy": "step",
     "lr_decay_iters": 50,
     "identity": 0.5,
-    "dataroot": "data",
     "batchSize": 4,
     "loadSize": 256,
     "cropSize": 256,
@@ -38,7 +38,7 @@
     "model": "cycle_gan",
     "which_direction": "AtoB",
     "nThreads": 1,
-    "checkpoints_dir": "checkpoints/",
+    "checkpoints_dir": "checkpoints",
     "name": "experiment_name",
     "norm": "instance",
     "serial_batches": false,

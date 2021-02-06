@@ -1,7 +1,7 @@
 import os
+import time
 import torch
 import argparse
-import time
 from tqdm import tqdm
 
 from my_dataset import CreateDataLoader
