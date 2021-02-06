@@ -39,9 +39,7 @@ with open(file_name, 'wt') as params_file:
 ###
 
 data_loader = CreateDataLoader(params)
-dataset = data_loader.load_data()
-# dataset = data_loader.dataset
-dataset_size = len(data_loader)
+dataset = data_loader.dataset
 print(f'#training images = {dataset_size}')
 
 model = create_model(params)
