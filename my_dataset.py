@@ -32,7 +32,7 @@ def get_transform(p):
     transform_list = []
     if p.resize_or_crop == 'resize_and_crop':
         osize = [p.loadSize, p.loadSize]
-        transform_list.append(transforms.Scale(osize, Image.BICUBIC))
+        transform_list.append(transforms.Resize(osize, Image.BICUBIC))
         transform_list.append(transforms.RandomCrop(p.cropSize))
     elif p.resize_or_crop == 'crop':
         transform_list.append(transforms.RandomCrop(p.cropSize))
@@ -84,7 +84,8 @@ def CreateDataLoader(p):
 class ImageFolder(data.Dataset):
 
     def __init__(self, root, transform=None, return_paths=False, img_loader=default_image_loader):
-
+        
+        super(ImageFolder, self).__init__()
         imgs = make_dataset(root)
         if len(imgs) == 0:
             raise(RuntimeError(f'Found 0 images in: {root}\n Supported image extensions are: {",".join(IMG_EXTENSIONS)}'))
@@ -199,7 +200,7 @@ class UnalignedDataset(data.Dataset):
                 'A_path': A_path, 'B_path': B_path}
 
     def __len__(self):
-        return max(self.A_size, self.B_size)
+        return min(max(self.A_size, self.B_size), self.p.max_dataset_size)
 
     def name(self):
         return 'UnalignedDataset'
@@ -268,12 +269,13 @@ class AlignedDataset(data.Dataset):
         return 'AlignedDataset'
 
 
-class CustomDatasetDataLoader():
+class CustomDatasetDataLoader(data.DataLoader):
     
     def __init__(self, p):
+
         self.p = p
         self.dataset = CreateDataset(p)
-        self.dataloader = torch.utils.data.DataLoader(
+        super(CustomDatasetDataLoader, self).__init__(
             self.dataset,
             batch_size=p.batchSize,
             shuffle=not p.serial_batches,
@@ -281,15 +283,3 @@ class CustomDatasetDataLoader():
 
     def name(self):
         return 'CustomDatasetDataLoader'
-
-    def load_data(self):
-        return self
-
-    def __len__(self):
-        return min(len(self.dataset), self.p.max_dataset_size)
-
-    def __iter__(self):
-        for i, data in enumerate(self.dataloader):
-            if i >= self.p.max_dataset_size:
-                break
-            yield data
