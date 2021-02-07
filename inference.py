@@ -39,8 +39,8 @@ start_time = time.time()
 for i, img_path in enumerate(inference_images):
 
     if params.how_many:
-        print(f'how_many: {params.how_many}')
         if i >= params.how_many:
+            print(f'how_many: {params.how_many}')
             break
     
     frameid = img_path.split('/')[-1].replace('.png', '')
