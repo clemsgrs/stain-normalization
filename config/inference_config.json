@@ -31,6 +31,7 @@
     "ntest": 100000,
     "checkpoints_dir": "checkpoints",
     "results_dir": "results",
+    "name": "experiment_name",
     "aspect_ratio": 1.0,
     "phase": "inference",
     "which_epoch": "latest",

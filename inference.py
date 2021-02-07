@@ -3,10 +3,11 @@ import sys
 import time
 import torch
 import argparse
+from PIL import Image
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-from dataset import make_dataset
+from dataset import make_dataset, get_transform
 from models import create_model
 from utils import open_config_file
 
@@ -32,23 +33,26 @@ num_inference_images = len(inference_images)
 print(f'#inference images = {num_inference_images}')
 
 model = create_model(params)
+transform = get_transform(params)
 start_time = time.time()
 
-for i, img_subpath in enumerate(inference_images):
+for i, img_path in enumerate(inference_images):
 
     if params.how_many:
         print(f'how_many: {params.how_many}')
         if i >= params.how_many:
             break
     
-    frameid = img_subpath[0].replace('.png', '')
-    img_path = os.path.join(params.source_dir, img_subpath)
-    target_path = os.path.join(params.target_dir, img_subpath)
+    frameid = img_path.split('/')[-1].replace('.png', '')
+    target_frameid = f'H{frameid[1:]}'
+    target_path = os.path.join(params.target_dir, f'{target_frameid}.png')
 
-    data = Image.open(img_path).convert('RGB')
-    target = Image.open(target_path).convert('RGB')
+    source_img = Image.open(img_path).convert('RGB')
+    target_img = Image.open(target_path).convert('RGB')
+    data = transform(source_img).unsqueeze(0)
+    target = transform(target_img).unsqueeze(0)
 
-    model.set_input(data)
+    model.set_input({'A': data, 'B': target, 'A_path': img_path, 'B_path': target_path})
     model.test()
     
     # OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
@@ -63,7 +67,7 @@ for i, img_subpath in enumerate(inference_images):
     axarr[1].imshow(visuals['fake_B'])
     axarr[1].set_title('fake Hamamatsu', y=-0.1)
     axarr[1].axis('off')
-    axarr[2].imshow(target)
+    axarr[2].imshow(visuals['real_B'])
     axarr[2].set_title('true Hamamatsu', y=-0.1)
     axarr[2].axis('off')
     fig.suptitle(f'Aperio to Hamamatsu ({frameid})', fontsize=16)
