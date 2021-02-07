@@ -449,7 +449,7 @@ def create_model(p):
     
     if p.model == 'cycle_gan':
         assert(p.dataset_mode == 'unaligned')
-        if p.phase = 'inference':
+        if p.phase == 'inference':
             model = CycleGAN_inference(p)
         else:
             model = CycleGAN(p)

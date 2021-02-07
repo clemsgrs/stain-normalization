@@ -1,6 +1,6 @@
 {
-    "source_dir": "inference_data/aperio",
-    "target_dir": "inference_data/hamamatsu",
+    "source_dir": "data/inferenceA",
+    "target_dir": "data/inferenceB",
     "batchSize": 1,
     "loadSize": 256,
     "cropSize": 256,
