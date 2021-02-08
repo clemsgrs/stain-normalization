@@ -13,7 +13,7 @@ IMG_EXTENSIONS = [
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
 
-def make_dataset(data_dir):
+def make_dataset(data_dir, shuffle=False):
     images = []
     assert os.path.isdir(data_dir), f'{data_dir} is not a valid directory'
 
@@ -23,6 +23,8 @@ def make_dataset(data_dir):
                 path = os.path.join(root, fname)
                 images.append(path)
 
+    if shuffle:
+        random.shuffle(images)
     return images
 
 def default_image_loader(path):
@@ -157,8 +159,8 @@ class UnalignedDataset(data.Dataset):
         self.dir_A = os.path.join(p.dataroot, p.phase + 'A')
         self.dir_B = os.path.join(p.dataroot, p.phase + 'B')
 
-        self.A_paths = make_dataset(self.dir_A)
-        self.B_paths = make_dataset(self.dir_B)
+        self.A_paths = make_dataset(self.dir_A, shuffle=p.shuffle)
+        self.B_paths = make_dataset(self.dir_B, shuffle=p.shuffle)
         # self.A_paths = sorted(self.A_paths)
         # self.B_paths = sorted(self.B_paths)
 

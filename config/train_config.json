@@ -1,5 +1,6 @@
 {
     "dataroot": "data",
+    "shuffle": true,
     "display_single_pane_ncols": 0,
     "update_html_freq": 1000,
     "print_freq": 100,
