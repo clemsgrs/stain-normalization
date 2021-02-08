@@ -73,7 +73,7 @@ for epoch in range(params.epoch_count, params.niter + params.niter_decay + 1):
             print_current_errors(epoch, epoch_iter, errors, t, params.save_log, log_filepath)
             print(f'\saving the model at the end of epoch {epoch}, iters {total_steps}')
             model.save('latest')
-            # model.save(epoch)
+            model.save(epoch)
 
         print(f'End of epoch {epoch} / {params.niter + params.niter_decay} \t Time Taken: {time.time() - epoch_start_time} sec')
         model.update_learning_rate()
