@@ -391,8 +391,8 @@ class CycleGAN_inference(ModelBackbone):
             model.load_state_dict(torch.load(checkpoint_path))
 
         which_epoch = p.which_epoch
-        G_A_checkpoint_path = os.path.join(p.checkpoints_dir, f'{which_epoch}_net_G_A.pth')
-        G_B_checkpoint_path = os.path.join(p.checkpoints_dir, f'{which_epoch}_net_G_B.pth')
+        G_A_checkpoint_path = os.path.join(p.checkpoints_dir, p.name, f'{which_epoch}_net_G_A.pth')
+        G_B_checkpoint_path = os.path.join(p.checkpoints_dir, p.name, f'{which_epoch}_net_G_B.pth')
         load_model(self.netG_A, G_A_checkpoint_path)
         load_model(self.netG_B, G_B_checkpoint_path)
 

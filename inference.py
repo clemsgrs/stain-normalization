@@ -12,7 +12,7 @@ from models import create_model
 from utils import open_config_file
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--config', type=str, default="inference_config.json", metavar='N', help='config file')
+parser.add_argument('--config', type=str, default="config/inference_config.json", metavar='N', help='config file')
 args = parser.parse_args()
 params = open_config_file(args.config)
 

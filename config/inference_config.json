@@ -1,6 +1,7 @@
 {
-    "source_dir": "data/inferenceA",
-    "target_dir": "data/inferenceB",
+    "source_dir": "data/testA",
+    "target_dir": "data/testB",
+    "which_epoch": "latest",
     "batchSize": 1,
     "loadSize": 256,
     "cropSize": 256,
@@ -34,6 +35,5 @@
     "name": "experiment_name",
     "aspect_ratio": 1.0,
     "phase": "inference",
-    "which_epoch": "latest",
     "how_many": 2
 }
