@@ -35,5 +35,5 @@
     "name": "experiment_name",
     "aspect_ratio": 1.0,
     "phase": "inference",
-    "how_many": 2
+    "how_many": 100000
 }
