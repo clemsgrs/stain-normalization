@@ -40,6 +40,7 @@ def create_dir(path):
         rm = input('remove existing result dir? ')
         if rm:
             rmtree(path.as_posix())
+            path.mkdir(exist_ok=False)
 
 # Converts a Tensor into a Numpy array
 # |imtype|: the desired type of the converted numpy array
