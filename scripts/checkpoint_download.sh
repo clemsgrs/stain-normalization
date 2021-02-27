@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
-gdown --id 1OkZJs0OgtdfG5J_s5dV0Kl4XyGTmnrqm -O checkpoints/pretrained.zip
-unzip -q checkpoints/pretrained.zip
+gdown --id 1QgmA8FHDv-oDcBJXeQ8Ql99WAcb0tnyj -O checkpoints/pretrained.zip
+unzip -q checkpoints/pretrained.zip -d checkpoints
 rm checkpoints/pretrained.zip
