@@ -6,6 +6,8 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 from PIL import Image
+from pathlib import Path
+from shutil import rmtree
 import inspect
 import collections
 
@@ -30,6 +32,14 @@ def mkdirs(paths):
 def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
+
+def create_dir(path):
+    try:
+        path.mkdir(exist_ok=False)
+    except FileExistsError:
+        rm = input('remove existing result dir? ')
+        if rm:
+            rmtree(path.as_posix())
 
 # Converts a Tensor into a Numpy array
 # |imtype|: the desired type of the converted numpy array

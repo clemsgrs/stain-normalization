@@ -5,11 +5,12 @@ import torch
 import argparse
 from PIL import Image
 from tqdm import tqdm
+from pathlib import Path
 import matplotlib.pyplot as plt
 
 from dataset import make_dataset, get_transform
 from models import create_model
-from utils import open_config_file
+from utils import open_config_file, create_dir
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default="config/inference_config.json", metavar='N', help='config file')
@@ -28,6 +29,7 @@ params.no_flip = True  # no flip
 
 ###
 
+create_dir(Path(params.results_dir))
 inference_images = make_dataset(params.source_dir)
 num_inference_images = len(inference_images)
 print(f'#inference images = {num_inference_images}')
