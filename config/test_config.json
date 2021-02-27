@@ -34,5 +34,5 @@
     "aspect_ratio": 1.0,
     "phase": "test",
     "which_epoch": "latest",
-    "how_many": 2
+    "how_many": 4
 }

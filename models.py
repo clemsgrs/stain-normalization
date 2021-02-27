@@ -89,9 +89,6 @@ class CycleGAN(ModelBackbone):
             self.criterionGAN = networks.GANLoss(use_lsgan=not p.no_lsgan, tensor=self.Tensor)
             self.criterionCycle = torch.nn.L1Loss()
             self.criterionIdt = torch.nn.L1Loss()
-            # gradient loss as per aicha
-            if p.aicha_loss:
-                self.criterionAicha = torch.nn.L1Loss()
 
             # initialize optimizers
             self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()), lr=p.lr, betas=(p.beta1, 0.999))
@@ -213,57 +210,9 @@ class CycleGAN(ModelBackbone):
         rec_B = self.netG_A(fake_A)
         loss_cycle_B = self.criterionCycle(rec_B, self.real_B) * lambda_B
 
-        # aicha forward
-        if self.p.aicha_loss:
-            print("I AM AICHCA LOSS")
-            # w1 = Variable(torch.Tensor([1.0, 2.0, 3.0]), requires_grad=True)
-            #
-            # print(w1.gra)
-            #
-            # sys.exit()
-            #
-            # realA_img = tensor2im(self.real_A.data)
-            # recA_img = tensor2im(rec_A.data)
-            # print(realA_img.shape)
-            # print("---------")
-            # gradient_input = self.get_gradient(recA_img)
-            #
-            # # print(gradient_input)
-            #
-            # wx = Variable(torch.from_numpy(np.multiply(gradient_input, realA_img)), requires_grad=True)
-            # wg = Variable(torch.from_numpy(np.multiply(gradient_input, recA_img)), requires_grad=True)
-            # loss_Aicha_A = self.criterionAicha(wx, wg) * self.p.lambda_Aicha
-
-            # aicha backwards
-
-            realB_img = tensor2im(self.real_B.data)
-            recB_img = tensor2im(rec_B.data)
-            plt.imshow(realB_img)
-            plt.imshow(recB_img)
-            plt.show()
-
-            sys.exit()
-
-            gradient_input = np.gradient(realB_img)
-            # print("gradient_input", gradient_input.size)
-            gradient_input = torch.from_numpy(gradient_input)
-            sys.exit()
-            grad_times_real = torch.mul(gradient_input, self.real_B)
-
-            # wx = Variable(torch.from_numpy(), requires_grad=True)
-            wx = grad_times_real
-            print('grad_times_real', grad_times_real)
-            sys.exit()
-            wg = Variable(torch.from_numpy(np.multiply(gradient_input, recB_img)), requires_grad=True)
-            loss_Aicha_B = self.criterionAicha(wx, wg) * self.p.lambda_Aicha
-
-            # aicha combined loss
-
-            loss_G = loss_G_A + loss_G_B + loss_Aicha_A + loss_Aicha_B + loss_idt_A + loss_idt_B
-        else:
-            # combined loss
-            loss_G = loss_G_A + loss_G_B + loss_cycle_A + loss_cycle_B + loss_idt_A + loss_idt_B
-
+        
+        # combined loss
+        loss_G = loss_G_A + loss_G_B + loss_cycle_A + loss_cycle_B + loss_idt_A + loss_idt_B
         loss_G.backward()
 
         self.fake_B = fake_B.data
@@ -274,14 +223,8 @@ class CycleGAN(ModelBackbone):
         self.loss_G_A = loss_G_A.item()
         self.loss_G_B = loss_G_B.item()
 
-        if self.p.aicha_loss:
-            # AichaLoss
-            self.loss_Aicha_A = loss_Aicha_A.item()
-            self.loss_Aicha_B = loss_Aicha_B.item()
-        else:
-            # cycleLoss
-            self.loss_cycle_A = loss_cycle_A.item()
-            self.loss_cycle_B = loss_cycle_B.item()
+        self.loss_cycle_A = loss_cycle_A.item()
+        self.loss_cycle_B = loss_cycle_B.item()
 
     # def get_gradient(self, img):
     #     # print("get_gradient ",img)
@@ -307,9 +250,6 @@ class CycleGAN(ModelBackbone):
     def get_current_errors(self):
         ret_errors = OrderedDict([('D_A', self.loss_D_A), ('G_A', self.loss_G_A), ('Cyc_A', self.loss_cycle_A),
                                   ('D_B', self.loss_D_B), ('G_B', self.loss_G_B), ('Cyc_B', self.loss_cycle_B)])
-        # aicha
-        # ret_errors = OrderedDict([('D_A', self.loss_D_A), ('G_A', self.loss_G_A), ('Aicha_A', self.loss_cycle_A),
-        #                           ('D_B', self.loss_D_B), ('G_B', self.loss_G_B), ('Aicha_B', self.loss_cycle_B)])
 
         if self.p.identity > 0.0:
             ret_errors['idt_A'] = self.loss_idt_A
