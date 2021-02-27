@@ -10,3 +10,6 @@ The original dataset consists of **284** frames at x20 magnification selected in
 # How to use the code?
 To run training and testing, just download the `train_inference.ipynb` notebook and open it with Google Colab.<br>
 In the notebook, we first download the data, then run training and/or inference using the respective config files.
+
+# Results
+![A05_03D_x=256_y=768](figures/A05_03D_x=256_y=768.png)
