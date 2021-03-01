@@ -12,4 +12,4 @@ To run training and testing, just download the `train_inference.ipynb` notebook 
 In the notebook, we first download the data, then run training and/or inference using the respective config files.
 
 # Results
-![A05_03D_x=256_y=768](figures/A05_03D_x=256_y=768.png)
+![rand10_results](figures/staingan_test_rand10.png)
